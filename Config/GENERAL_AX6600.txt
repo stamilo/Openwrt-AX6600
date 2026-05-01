@@ -1,5 +1,7 @@
 #科学插件调整
 #CONFIG_PACKAGE_luci-app-homeproxy=y
+CONFIG_PACKAGE_sing-box=y
+CONFIG_PACKAGE_luci-app-wireguard=y
 #增加插件
 CONFIG_PACKAGE_luci-app-autoreboot=y
 CONFIG_PACKAGE_luci-app-netspeedtest=n
@@ -167,3 +169,6 @@ CONFIG_PACKAGE_luci-app-wireless-regdb=y
 CONFIG_PACKAGE_skb_recycler=n
 # 调整网络参数
 CONFIG_PACKAGE_kmod-tcp-bbr=y
+
+# 我看内核只有 cubic 和 reno 算法，可以把 bbr 算法也加进去吗：
+CONFIG_TCP_CONG_BBR=y
