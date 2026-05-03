@@ -70,6 +70,13 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 	#设置NSS版本
 	echo "CONFIG_NSS_FIRMWARE_VERSION_11_4=n" >> ./.config
 	echo "CONFIG_NSS_FIRMWARE_VERSION_12_5=y" >> ./.config
+	#修复 Linux 6.18 新增 ARM64_BRBE 项导致 syncconfig 交互失败
+	for KCFG in ./target/linux/qualcommax/config-6.18 \
+	            ./target/linux/qualcommax/ipq60xx/config-6.18; do
+		if [ -f "$KCFG" ] && ! grep -q "ARM64_BRBE" "$KCFG"; then
+			echo "# CONFIG_ARM64_BRBE is not set" >> "$KCFG"
+		fi
+	done
 	#无WIFI配置调整Q6大小
 	if [[ "${WRT_CONFIG,,}" == *"wifi"* && "${WRT_CONFIG,,}" == *"no"* ]]; then
 		find "$DTS_PATH" -type f ! -iname '*nowifi*' -exec sed -i 's/ipq\(6018\|8074\).dtsi/ipq\1-nowifi.dtsi/g' {} +
