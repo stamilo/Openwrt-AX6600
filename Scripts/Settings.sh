@@ -148,10 +148,6 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 
 fi
 
-#调整 ipq60xx 设备内核分区到 12M
-if [[ "${WRT_CONFIG^^}" == *"IPQ60XX"* ]]; then
-        set_kernel_size
-fi
 # =========================================================
 # 智能系统调优：优化内存水位线 (min_free_kbytes)
 # =========================================================
@@ -175,6 +171,11 @@ else
     fi
 fi
 
+#调整 ipq60xx 设备内核分区到 12M
+if [[ "${WRT_CONFIG^^}" == *"IPQ60XX"* ]]; then
+        set_kernel_size
+fi
+
 ## copy from function
-local target=ipq60xx
-cat_kernel_config "target/linux/qualcommax/${target}/config-default"
+# local target=ipq60xx
+cat_kernel_config "target/linux/qualcommax/ipq60xx/config-default"
