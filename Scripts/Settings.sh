@@ -14,6 +14,41 @@ apply_sed_to_matches() {
 	fi
 }
 
+
+function cat_kernel_config() {
+  if [ -f $1 ]; then
+    cat >> $1 <<EOF
+CONFIG_BPF=y
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+CONFIG_CGROUPS=y
+CONFIG_KPROBES=y
+CONFIG_NET_INGRESS=y
+CONFIG_NET_EGRESS=y
+CONFIG_NET_SCH_INGRESS=m
+CONFIG_NET_CLS_BPF=m
+CONFIG_NET_CLS_ACT=y
+CONFIG_BPF_STREAM_PARSER=y
+CONFIG_DEBUG_INFO=y
+# CONFIG_DEBUG_INFO_REDUCED is not set
+CONFIG_DEBUG_INFO_BTF=y
+CONFIG_KPROBE_EVENTS=y
+CONFIG_BPF_EVENTS=y
+
+CONFIG_NET_SCH_BPF=y
+CONFIG_SCHED_CLASS_EXT=y
+CONFIG_PROBE_EVENTS_BTF_ARGS=y
+CONFIG_IMX_SCMI_MISC_DRV=n
+CONFIG_ARM64_CONTPTE=y
+
+CONFIG_PERSISTENT_HUGE_ZERO_FOLIO=n
+CONFIG_NO_PAGE_MAPCOUNT=n
+CONFIG_ARM64_BRBE=y
+EOF
+    echo "cat_kernel_config to $1 done"
+  fi
+}
+
 # 将 ipq60xx 相关设备的内核分区从 6144k/8192k 升到 12288k
 # 之所以要在 emmc-common / nand-common / 多个具体设备块都改一遍，是因为
 # 上游可能把 KERNEL_SIZE 写在公共块里（设备靠继承拿到），也可能写在设备自身。
@@ -139,3 +174,7 @@ else
         echo "Memory patch: current value ($CURRENT_VAL) is sufficient, skipped."
     fi
 fi
+
+## copy from function
+local target=ipq60xx
+cat_kernel_config "target/linux/qualcommax/${target}/config-default"
