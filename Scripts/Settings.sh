@@ -14,6 +14,41 @@ apply_sed_to_matches() {
 	fi
 }
 
+# 将 ipq60xx 相关设备的内核分区从 6144k/8192k 升到 12288k
+# 之所以要在 emmc-common / nand-common / 多个具体设备块都改一遍，是因为
+# 上游可能把 KERNEL_SIZE 写在公共块里（设备靠继承拿到），也可能写在设备自身。
+# 为了"无论上游怎么放都能命中"采用穷举式 sed；空白宽松匹配，大小值严格匹配（仅升不降）。
+set_kernel_size() {
+	local IMAGE_FILE='./target/linux/qualcommax/image/ipq60xx.mk'
+	[ -f "$IMAGE_FILE" ] || { echo "set_kernel_size: $IMAGE_FILE not found, skip"; return 0; }
+
+	local SP='[[:space:]]*'
+
+	# emmc-common 公共块：6144k -> 12288k
+	sed -i -E "/^define Device\/emmc-common/,/^endef/ s/KERNEL_SIZE${SP}:=${SP}6144k/KERNEL_SIZE := 12288k/" "$IMAGE_FILE"
+
+	# nand-common 公共块：仅在还没有 KERNEL_SIZE 时才注入 8192k（幂等）
+	if ! awk '/^define Device\/nand-common/,/^endef/' "$IMAGE_FILE" | grep -Eq "KERNEL_SIZE${SP}:="; then
+		sed -i -E "/^define Device\/nand-common/,/^endef/ s/^endef/\tKERNEL_SIZE := 8192k\nendef/" "$IMAGE_FILE"
+	fi
+
+	# 具体设备块：6144k -> 12288k
+	local DEV
+	for DEV in jdcloud_re-ss-01 jdcloud_re-cs-02 jdcloud_re-cs-07; do
+		sed -i -E "/^define Device\/${DEV}/,/^endef/ s/KERNEL_SIZE${SP}:=${SP}6144k/KERNEL_SIZE := 12288k/" "$IMAGE_FILE"
+	done
+
+	# linksys_mr* 设备块（含 linksys_mr7350 / linksys_mr7500 子块）：8192k -> 12288k
+	sed -i -E "/^define Device\/linksys_mr/,/^endef/ s/KERNEL_SIZE${SP}:=${SP}8192k/KERNEL_SIZE := 12288k/" "$IMAGE_FILE"
+
+	# 校验：文件中至少要存在一处 12288k（无论是这次改的还是之前已有的）
+	if grep -Eq "KERNEL_SIZE${SP}:=${SP}12288k" "$IMAGE_FILE"; then
+		echo "set_kernel_size: ipq60xx kernel partitions ensured at 12288k"
+	else
+		echo "set_kernel_size: WARNING - 12288k not present after sed; upstream format may have changed" >&2
+	fi
+}
+
 #移除luci-app-attendedsysupgrade
 apply_sed_to_matches "./feeds/luci/collections/" "Makefile" "/attendedsysupgrade/d"
 
@@ -74,6 +109,11 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 	if [[ "${WRT_CONFIG,,}" == *"wifi"* && "${WRT_CONFIG,,}" == *"no"* ]]; then
 		find "$DTS_PATH" -type f ! -iname '*nowifi*' -exec sed -i 's/ipq\(6018\|8074\).dtsi/ipq\1-nowifi.dtsi/g' {} +
 		echo "qualcommax set up nowifi successfully!"
+	fi
+
+	#调整 ipq60xx 设备内核分区到 12M
+	if [[ "${WRT_CONFIG^^}" == *"IPQ60XX"* ]]; then
+		set_kernel_size
 	fi
 fi
 
