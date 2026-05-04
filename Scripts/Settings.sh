@@ -111,12 +111,12 @@ if [[ "${WRT_TARGET^^}" == *"QUALCOMMAX"* ]]; then
 		echo "qualcommax set up nowifi successfully!"
 	fi
 
-	#调整 ipq60xx 设备内核分区到 12M
-	if [[ "${WRT_CONFIG^^}" == *"IPQ60XX"* ]]; then
-		set_kernel_size
-	fi
 fi
 
+#调整 ipq60xx 设备内核分区到 12M
+if [[ "${WRT_CONFIG^^}" == *"IPQ60XX"* ]]; then
+        set_kernel_size
+fi
 # =========================================================
 # 智能系统调优：优化内存水位线 (min_free_kbytes)
 # =========================================================
